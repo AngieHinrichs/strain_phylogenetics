@@ -146,10 +146,18 @@ def get_most_parsimonious_transitions (tree, bfs, bfs_idx, var_ids):
         leaves = tree.leaves(nid)
         l_f = set([l for l in leaves if states[bfs_idx[l.identifier]] == 1])
         leaves_affected_forward.append(l_f)
+        if (len(leaves) < 4):
+            for l in leaves:
+                if (states[bfs_idx[l.identifier]] == 1):
+                    flagged_leaves.append(l.identifier)
     for nid in back_mutations:
         leaves = tree.leaves(nid)
         l_b = set([l for l in leaves if states[bfs_idx[l.identifier]] == 0])
         leaves_affected_backward.append(l_b)
+        if (len(leaves) < 4):
+            for l in leaves:
+                if (states[bfs_idx[l.identifier]] == 0):
+                    flagged_leaves.append(l.identifier)
     for i in range(len(leaves_affected_forward)):
         for j in range(i):
             leaves_affected_forward[j] = leaves_affected_forward[j] - \
@@ -160,7 +168,8 @@ def get_most_parsimonious_transitions (tree, bfs, bfs_idx, var_ids):
             leaves_affected_backward[i]
     return forward_mutations, back_mutations,\
             [str(len(l)) for l in leaves_affected_forward], \
-            [str(len(l)) for l in leaves_affected_backward]
+            [str(len(l)) for l in leaves_affected_backward], \
+            flagged_leaves
 
 
 if __name__ == "__main__":
@@ -233,17 +242,20 @@ if __name__ == "__main__":
                 variant_ids = [vcf_ids[k] for (k, w) in enumerate(words[9:]) \
                                if (w.split(':')[0] == '1')]
                 if ((variant_list == None) or (variant in variant_list)):
-                    f_mut, b_mut, l_f, l_b = get_most_parsimonious_transitions \
-                        (tree, bfs, bfs_idx, variant_ids)
+                    f_mut, b_mut, l_f, l_b, flagged_leaves = \
+                            get_most_parsimonious_transitions \
+                            (tree, bfs, bfs_idx, variant_ids)
                     print variant+'\talt_alleles='+str(len(variant_ids))+\
                           '\tparsimony_score='+ str(len(f_mut)+len(b_mut))+\
                           '\tforward_mutation_nodes='+','.join(f_mut)+\
                           '\tback_mutation_nodes='+','.join(b_mut)+\
                           '\tforward_mutation_clade_sizes='+','.join(l_f)+\
-                          '\tback_mutation_clade_sizes='+','.join(l_b)
+                          '\tback_mutation_clade_sizes='+','.join(l_b)+\
+                          '\tflagged_leaves='+','.join(flagged_leaves)  
+
                     total_parsimony_score += len(f_mut)+len(b_mut)
                 
-    print 'Total leaf nodes: ', len(bfs)
+    print 'Total leaf nodes: ', len(tree.leaves())
     print 'Total variants: ', total_variants
     print 'Total parsimony score: ', total_parsimony_score
 
